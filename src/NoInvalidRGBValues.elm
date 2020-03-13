@@ -69,12 +69,7 @@ expressionVisitor node =
 
 invalidTriplet : (Expression -> Maybe a) -> (a -> Bool) -> ( Expression, Expression, Expression ) -> Bool
 invalidTriplet convertFunction isValid ( e1, e2, e3 ) =
-    case ( convertFunction e1, convertFunction e2, convertFunction e3 ) of
-        ( Just r, Just g, Just b ) ->
-            List.any (not << isValid) [ r, g, b ]
-
-        _ ->
-            False
+    List.any ((==) (Just True) << Maybe.map (not << isValid ) << convertFunction) [e1, e2, e3]
 
 
 expressionToInt : Expression -> Maybe Int
