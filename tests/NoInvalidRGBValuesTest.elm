@@ -41,6 +41,10 @@ testInvalidRgbValues =
     , "rgb 1 1 1.2"
     , "rgb 0 -1 1"
     , "rgb 0 -1 -2"
+    , "rgb 0 valueDefinedSomewhereElse 1.2"
+    , "rgb 0 valueDefinedSomewhereElse 2"
+    , "rgb 0 valueDefinedSomewhereElse -2"
+    , "rgb valueDefinedSomewhereElse anotherValue -2"
     ]
         |> List.map
             (\expression ->
@@ -62,6 +66,10 @@ testInvalidRgb255Values =
     , "rgb255 128 128 256"
     , "rgb255 256 128 1"
     , "rgb255 0 -128 1"
+    , "rgb255 0 valueDefinedSomewhereElse -1"
+    , "rgb255 0 valueDefinedSomewhereElse 256"
+    , "rgb255 valueDefinedSomewhereElse anotherValue 256"
+    , "rgb255 valueDefinedSomewhereElse anotherValue -1"
     ]
         |> List.map
             (\expression ->
