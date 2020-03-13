@@ -10,8 +10,12 @@ all =
     describe "NoInvalidRGBValues"
         [ testValidRgbValues
         , testValidRgb255Values
+        , testValidRgbaValues
+        , testValidRgba255Values
         , testInvalidRgbValues
         , testInvalidRgb255Values
+        , testInvalidRgbaValues
+        , testInvalidRgba255Values
         ]
 
 
@@ -32,7 +36,27 @@ testValidRgb255Values =
     , "rgb255 255 255 255"
     ]
         |> List.map (testAnd ExpectNoErrors)
-        |> describe "Valid rgb 255values"
+        |> describe "Valid rgb255 values"
+
+
+testValidRgbaValues : Test
+testValidRgbaValues =
+    [ "rgba 1 1 1"
+    , "rgba 0.1 1 0.9"
+    , "rgba 0 0 0"
+    , "rgba 0.5 0.5 0.5"
+    ]
+        |> List.map (testAnd ExpectNoErrors)
+        |> describe "Valid rgba values"
+
+
+testValidRgba255Values : Test
+testValidRgba255Values =
+    [ "rgba255 0 20 255"
+    , "rgba255 255 255 255"
+    ]
+        |> List.map (testAnd ExpectNoErrors)
+        |> describe "Valid rgba255 values"
 
 
 testInvalidRgbValues : Test
@@ -51,13 +75,37 @@ testInvalidRgbValues =
                 testAnd
                     (ExpectErrors
                         { message = "Invalid rgb value."
-                        , details = [ "Each component must be within [0, 1]" ]
+                        , details = [ "Each component must be within [0, 1]." ]
                         , under = expression
                         }
                     )
                     expression
             )
         |> describe "Invalid rgb values"
+
+
+testInvalidRgbaValues : Test
+testInvalidRgbaValues =
+    [ "rgba 1 1 1 2"
+    , "rgba 0 1 1 -1"
+    , "rgba 0 -1 -2 1"
+    , "rgba 0 valueDefinedSomewhereElse 1.2 1"
+    , "rgba 0 valueDefinedSomewhereElse 2 1"
+    , "rgba 0 valueDefinedSomewhereElse -2 1"
+    , "rgba valueDefinedSomewhereElse anotherValue -2 -1"
+    ]
+        |> List.map
+            (\expression ->
+                testAnd
+                    (ExpectErrors
+                        { message = "Invalid rgba value."
+                        , details = [ "Each component must be within [0, 1], including alpha value." ]
+                        , under = expression
+                        }
+                    )
+                    expression
+            )
+        |> describe "Invalid rgba values"
 
 
 testInvalidRgb255Values : Test
@@ -76,13 +124,38 @@ testInvalidRgb255Values =
                 testAnd
                     (ExpectErrors
                         { message = "Invalid rgb255 value."
-                        , details = [ "Each component must be within [0, 255]" ]
+                        , details = [ "Each component must be within [0, 255]." ]
                         , under = expression
                         }
                     )
                     expression
             )
         |> describe "Invalid rgb255 values"
+
+
+testInvalidRgba255Values : Test
+testInvalidRgba255Values =
+    [ "rgba255 128 128 1 -1"
+    , "rgba255 128 128 255 255"
+    , "rgba255 256 128 1 -1"
+    , "rgba255 0 -128 1 1"
+    , "rgba255 0 valueDefinedSomewhereElse -1 1"
+    , "rgba255 0 valueDefinedSomewhereElse 256 1"
+    , "rgba255 valueDefinedSomewhereElse anotherValue 256 1"
+    , "rgba255 valueDefinedSomewhereElse anotherValue -1 1"
+    ]
+        |> List.map
+            (\expression ->
+                testAnd
+                    (ExpectErrors
+                        { message = "Invalid rgba255 value."
+                        , details = [ "Each component must be within [0, 255], and alpha value must be within [0, 1]." ]
+                        , under = expression
+                        }
+                    )
+                    expression
+            )
+        |> describe "Invalid rgba255 values"
 
 
 testAnd : ExpectedOutcome -> String -> Test

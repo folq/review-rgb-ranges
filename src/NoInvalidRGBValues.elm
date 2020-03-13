@@ -37,10 +37,10 @@ expressionVisitor node =
         Application app ->
             case List.map Node.value app of
                 (FunctionOrValue _ "rgb255") :: er :: eg :: eb :: [] ->
-                    if invalidTriplet expressionToInt validRgb255 ( er, eg, eb ) then
+                    if atLeastOneInvalidExpression expressionToInt validRgb255 [ er, eg, eb ] then
                         [ Rule.error
                             { message = "Invalid rgb255 value."
-                            , details = [ "Each component must be within [0, 255]" ]
+                            , details = [ "Each component must be within [0, 255]." ]
                             }
                             (Node.range node)
                         ]
@@ -49,10 +49,34 @@ expressionVisitor node =
                         []
 
                 (FunctionOrValue _ "rgb") :: er :: eg :: eb :: [] ->
-                    if invalidTriplet expressionToFloat validRgb ( er, eg, eb ) then
+                    if atLeastOneInvalidExpression expressionToFloat validRgb [ er, eg, eb ] then
                         [ Rule.error
                             { message = "Invalid rgb value."
-                            , details = [ "Each component must be within [0, 1]" ]
+                            , details = [ "Each component must be within [0, 1]." ]
+                            }
+                            (Node.range node)
+                        ]
+
+                    else
+                        []
+
+                (FunctionOrValue _ "rgba") :: er :: eg :: eb :: ea :: [] ->
+                    if atLeastOneInvalidExpression expressionToFloat validRgb [ er, eg, eb ] || atLeastOneInvalidExpression expressionToFloat validRgb [ ea ] then
+                        [ Rule.error
+                            { message = "Invalid rgba value."
+                            , details = [ "Each component must be within [0, 1], including alpha value." ]
+                            }
+                            (Node.range node)
+                        ]
+
+                    else
+                        []
+
+                (FunctionOrValue _ "rgba255") :: er :: eg :: eb :: ea :: [] ->
+                    if atLeastOneInvalidExpression expressionToInt validRgb255 [ er, eg, eb ] || atLeastOneInvalidExpression expressionToFloat validRgb [ ea ] then
+                        [ Rule.error
+                            { message = "Invalid rgba255 value."
+                            , details = [ "Each component must be within [0, 255], and alpha value must be within [0, 1]." ]
                             }
                             (Node.range node)
                         ]
@@ -67,9 +91,9 @@ expressionVisitor node =
             []
 
 
-invalidTriplet : (Expression -> Maybe a) -> (a -> Bool) -> ( Expression, Expression, Expression ) -> Bool
-invalidTriplet convertFunction isValid ( e1, e2, e3 ) =
-    List.any ((==) (Just True) << Maybe.map (not << isValid ) << convertFunction) [e1, e2, e3]
+atLeastOneInvalidExpression : (Expression -> Maybe a) -> (a -> Bool) -> List Expression -> Bool
+atLeastOneInvalidExpression convertFunction isValid =
+    List.any ((==) (Just True) << Maybe.map (not << isValid) << convertFunction)
 
 
 expressionToInt : Expression -> Maybe Int
