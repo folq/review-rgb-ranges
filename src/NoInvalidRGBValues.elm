@@ -26,12 +26,12 @@ If you want to use this rule, add it to `config : List Rule` in `review/ReviewCo
 -}
 rule : Rule
 rule =
-    Rule.newSchema "RgbColorsInValidRange"
+    Rule.newModuleRuleSchema "RgbColorsInValidRange" ()
         |> Rule.withSimpleExpressionVisitor expressionVisitor
-        |> Rule.fromSchema
+        |> Rule.fromModuleRuleSchema
 
 
-expressionVisitor : Node Expression -> List Error
+expressionVisitor : Node Expression -> List (Error {})
 expressionVisitor node =
     case Node.value node of
         Application app ->
