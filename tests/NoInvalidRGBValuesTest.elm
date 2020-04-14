@@ -1,7 +1,7 @@
 module NoInvalidRGBValuesTest exposing (all)
 
 import NoInvalidRGBValues exposing (rule)
-import Review.Test exposing (ReviewResult)
+import Review.Test
 import Test exposing (Test, describe, test)
 
 
