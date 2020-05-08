@@ -13,6 +13,7 @@ To be used with <https://package.elm-lang.org/packages/jfmengels/elm-review/late
 
 import Elm.Syntax.Expression exposing (Expression(..))
 import Elm.Syntax.Node as Node exposing (Node)
+import Review.Fix as Fix
 import Review.Rule as Rule exposing (Error, Rule)
 
 
@@ -49,13 +50,32 @@ expressionVisitor node =
                         []
 
                 (FunctionOrValue _ "rgb") :: er :: eg :: eb :: [] ->
+                    let
+                        defaultError =
+                            [ Rule.error
+                                { message = "Invalid rgb value."
+                                , details = [ "Each component must be within [0, 1]." ]
+                                }
+                                (Node.range node)
+                            ]
+                    in
                     if atLeastOneInvalidExpression expressionToFloat validRgb [ er, eg, eb ] then
-                        [ Rule.error
-                            { message = "Invalid rgb value."
-                            , details = [ "Each component must be within [0, 1]." ]
-                            }
-                            (Node.range node)
-                        ]
+                        case List.map expressionToInt [ er, eg, eb ] of
+                            [ Just r, Just g, Just b ] ->
+                                if List.all validRgb255 [ r, g, b ] then
+                                    [ Rule.errorWithFix
+                                        { message = "Invalid rgb value."
+                                        , details = [ "Each component must be within [0, 1]." ]
+                                        }
+                                        (Node.range node)
+                                        [ Fix.replaceRangeBy (Node.range node) <| "rgb255 " ++ (String.join " " <| List.map String.fromInt [ r, g, b ]) ]
+                                    ]
+
+                                else
+                                    defaultError
+
+                            _ ->
+                                defaultError
 
                     else
                         []

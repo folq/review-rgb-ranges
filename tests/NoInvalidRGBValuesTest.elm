@@ -13,6 +13,7 @@ all =
         , testValidRgbaValues
         , testValidRgba255Values
         , testInvalidRgbValues
+        , testInvalidRgbValuesWithFixes
         , testInvalidRgb255Values
         , testInvalidRgbaValues
         , testInvalidRgba255Values
@@ -61,9 +62,7 @@ testValidRgba255Values =
 
 testInvalidRgbValues : Test
 testInvalidRgbValues =
-    [ "rgb 1 1 2"
-    , "rgb 1 1 1.2"
-    , "rgb 0 -1 1"
+    [ "rgb 0 -1 1"
     , "rgb 0 -1 -2"
     , "rgb 0 valueDefinedSomewhereElse 1.2"
     , "rgb 0 valueDefinedSomewhereElse 2"
@@ -82,6 +81,28 @@ testInvalidRgbValues =
                     expression
             )
         |> describe "Invalid rgb values"
+
+
+testInvalidRgbValuesWithFixes : Test
+testInvalidRgbValuesWithFixes =
+    [ ( "rgb 255 255 255", "rgb255 255 255 255" )
+    , ( "rgb 128 255 255", "rgb255 128 255 255" )
+    , ( "rgb 0 255 255", "rgb255 0 255 255" )
+    , ( "rgb 128 10 124", "rgb255 128 10 124" )
+    ]
+        |> List.map
+            (\( expression, fixedExpression ) ->
+                testAnd
+                    (ExpectErrorsAndThenAFixedExpression
+                        { message = "Invalid rgb value."
+                        , details = [ "Each component must be within [0, 1]." ]
+                        , under = expression
+                        }
+                        { fixedExpression = fixedExpression }
+                    )
+                    expression
+            )
+        |> describe "Invalid rgb values, with fixes"
 
 
 testInvalidRgbaValues : Test
@@ -162,7 +183,7 @@ testAnd : ExpectedOutcome -> String -> Test
 testAnd expectedOutcome expression =
     let
         result =
-            Review.Test.run rule <| "module TestModule exposing (..)\n\nvalue = " ++ expression
+            Review.Test.run rule <| fileContentWithSimpleExpression expression
     in
     case expectedOutcome of
         ExpectNoErrors ->
@@ -171,7 +192,22 @@ testAnd expectedOutcome expression =
         ExpectErrors errorFields ->
             test ("should report invalid value '" ++ expression ++ "'") <| \() -> Review.Test.expectErrors [ Review.Test.error errorFields ] result
 
+        ExpectErrorsAndThenAFixedExpression errorFields { fixedExpression } ->
+            test ("should report invalid value '" ++ expression ++ "' but also suggest a fix") <|
+                \() ->
+                    Review.Test.expectErrors
+                        [ Review.Test.error errorFields
+                            |> Review.Test.whenFixed (fileContentWithSimpleExpression fixedExpression)
+                        ]
+                        result
+
+
+fileContentWithSimpleExpression : String -> String
+fileContentWithSimpleExpression expression =
+    "module TestModule exposing (..)\n\nvalue = " ++ expression
+
 
 type ExpectedOutcome
     = ExpectNoErrors
     | ExpectErrors { message : String, details : List String, under : String }
+    | ExpectErrorsAndThenAFixedExpression { message : String, details : List String, under : String } { fixedExpression : String }
